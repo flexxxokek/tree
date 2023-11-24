@@ -2,34 +2,26 @@
 
 int main()
 {
-    Tree tree = NewTree();
+    Tree* tree = NewTree();
 
-    FILE* fp = fopen( "treelog", "r" );
-
-    /*TreeInsert( &tree, 499 );
-
-    for( int i = 0; i < 1000; i++ )
-    {
-        TreeInsert( &tree, i % 500 );
-    }
-
-    TreeOrder( &tree );
-
-    TreeDtor( &tree );
-
-    TreeCtor( &tree );
+    FILE* fp = fopen( "./logs/akinatorlog", "r+" );
 
     if( !fp )
-        printf( "fp is null\n" );
-    //FreadSeq( fp, &tree );
+    {
+        perror( "fp is null" );
+    }
 
-    TreeOrder( &tree );
+    FreadPreOrder( fp, tree );
 
-    fclose( fp );*/
+    StartAkinator( tree );
 
-    FreadPreOrder( fp, &tree );
+    fseek( fp, 0L, SEEK_SET );
 
-    OutTreePreOrder( &tree );
+    OutTreePreOrder( tree, fp );
+
+    VIS_TREE_DUMP( tree );
+
+    fclose( fp );
 
     return 0;
 }
