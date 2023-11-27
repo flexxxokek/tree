@@ -2,17 +2,13 @@ digraph tree{
     rankdir="TB"
     node [ shape="record"; color=yellow; style=filled; area=100 ]
     edge [  ]
-node0[ label="{ <data> nigga | { <l> left:0x55b51fa834f0 | <r> right:0x55b51fa83530 } } " ]
+node0[ label="{ <p> 0x564ed16cdcd0 | <data> nigga | { <l> left | <r> right } } " ]
 node0:l -> node1
 node0:r -> node2
-node1[ color=lightgreen label="{ <data> pewdipoe | { <l> left:NULL | <r> right:NULL } } " ]
-node2[ label="{ <data> basket play | { <l> left:0x55b51fa83570 | <r> right:0x55b51fa83630 } } " ]
-node2:l -> node5
-node2:r -> node6
-node5[ label="{ <data> sings | { <l> left:0x55b51fa835b0 | <r> right:0x55b51fa835f0 } } " ]
-node5:l -> node11
-node5:r -> node12
-node11[ color=lightgreen label="{ <data> ishowspedf | { <l> left:NULL | <r> right:NULL } } " ]
-node12[ color=lightgreen label="{ <data> michael jackson | { <l> left:NULL | <r> right:NULL } } " ]
-node6[ color=lightgreen label="{ <data> lebra james | { <l> left:NULL | <r> right:NULL } } " ]
+node1[ label="{ <p> 0x564ed16cdd10 | <data> end universe | { <l> left | <r> right } } " ]
+node1:l -> node3
+node1:r -> node4
+node3[ color=lightgreen label="{ <p> 0x564ed16cdd50 | <data> pewdipoe | { <l> left:NULL | <r> right:NULL } } " ]
+node4[ color=lightgreen label="{ <p> 0x564ed16cdd90 | <data> Advanced warp core | { <l> left:NULL | <r> right:NULL } } " ]
+node2[ color=lightgreen label="{ <p> 0x564ed16cddd0 | <data> ishowspedf | { <l> left:NULL | <r> right:NULL } } " ]
 }

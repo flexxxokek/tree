@@ -1,8 +1,13 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
+#include "mystring.h"
 #include "tree.h"
 
 #define _MARK_ printf( "||||!MARK!||||, %s, %s, %d  \n", __FILE__, __PRETTY_FUNCTION__, __LINE__  );
 
-#define SMTH_IS_NULL( smth ) printf( "in %s" #smth "is NULL\n", __PRETTY_FUNCTION__ );
+#define SMTH_IS_NULL( smth ) fprintf( stderr, "in %s" #smth "is NULL\n", __PRETTY_FUNCTION__ );
 
 void TreeCtor( Tree* tree )
 {
@@ -38,6 +43,8 @@ void TreeDtor( Tree* tree )
     tree->size = 0;
 
     tree->root = NULL;
+    
+    free( tree );
 }
 
 void DelSubTree( Node* node )
@@ -51,7 +58,7 @@ void DelSubTree( Node* node )
 
     DelSubTree( node->right );
 
-    free( node );
+    NodeDtor( node );
 }
 
 Tree* NewTree()
@@ -72,7 +79,7 @@ void NodeCtor( Node* node )
         return;
     }
 
-    node->data = ( char* ) calloc( 1, sizeof( char ) * BUFF_SIZE );
+    node->data = NULL;
 
     node->left = NULL;
 
@@ -86,6 +93,21 @@ Node* NewNode()
     NodeCtor( node );
 
     return node;
+}
+
+void NodeDtor( Node* node )
+{
+    if( !node )
+    {
+        SMTH_IS_NULL( node );
+
+        return;
+    }
+    
+    if( node->data )
+        free( node->data );
+
+    free( node );
 }
 
 void OutTreePreOrder( Tree* tree, FILE* fp )
@@ -131,27 +153,27 @@ void OutSubTreePreOrder( Node* node, FILE* fp )
     fprintf( fp, " )\n" );
 }
 
-void FreadPreOrder( FILE* fp, Tree* tree )
+TREE_ERRS FreadPreOrder( FILE* fp, Tree* tree )
 {
     if( !fp )
     {
         SMTH_IS_NULL( fp );
 
-        return;
+        return TREE_ERRS::FP_IS_NULL;
     }
 
     if( !tree )
     {
         SMTH_IS_NULL( tree );
 
-        return;
+        return TREE_ERRS::TREE_POINTER_IS_NULL;
     }
 
     char buff[BUFF_SIZE] = {};
 
     if( !tree->root )
     {
-        fgets( buff, BUFF_SIZE, fp );
+        fgets( buff, BUFF_SIZE - 1, fp );
 
         *strchr( buff, '\n' ) = '\0';
 
@@ -159,30 +181,47 @@ void FreadPreOrder( FILE* fp, Tree* tree )
         {
             tree->root = NewNode();
 
-            fgets( buff, BUFF_SIZE, fp );
+            if( !tree->root )
+            {
+                perror( "nullptr error" );
+
+                return TREE_ERRS::LACK_OF_MEMORY;
+            }
+
+            if( fgets( buff, BUFF_SIZE - 1, fp ) == NULL )
+            {
+                NodeDtor( tree->root );
+
+                return TREE_ERRS::TREE_END_OF_IN;
+            }
 
             *strchr( buff, '\n' ) = '\0';
 
-            strncpy( tree->root->data, buff, BUFF_SIZE );
+            tree->root->data = strdup( buff );
         }
         else
         {
-            return;
+            return TREE_ERRS::INVALID_TREE_INPUT;
         }
     }
 
-    NodeFreadPreOrder( fp, tree->root, buff );
+    return NodeFreadPreOrder( fp, tree->root, buff );
 }
 
-void NodeFreadPreOrder( FILE* fp, Node* node, char* buff )
+TREE_ERRS NodeFreadPreOrder( FILE* fp, Node* node, char* buff )
 {
     do
     {
-        fgets( buff, BUFF_SIZE, fp );
+        fgets( buff, BUFF_SIZE - 1, fp );
     }
     while( buff[0] == '\n' );
 
-    *strchr( buff, '\n' ) = '\0';
+    char* p = NULL;
+
+    p = strchr( buff, '\n' );
+
+    if( p )
+        *p = '\0';
 
     if( !strcmp( buff, "nil" ) )
     {
@@ -192,16 +231,31 @@ void NodeFreadPreOrder( FILE* fp, Node* node, char* buff )
     {
         node->left = NewNode();
 
-        fgets( node->left->data, BUFF_SIZE, fp );
+        if( !node->left )
+        {
+            perror( "nullptr error" );
 
-        *strchr( node->left->data, '\n' ) = '\0';
+            return TREE_ERRS::LACK_OF_MEMORY;
+        }
+
+        fgets( buff, BUFF_SIZE - 1, fp );
+
+        p = strchr( buff, '\n' );
+
+        if( p )
+            *p = '\0';
+
+        node->left->data = strdup( buff );
 
         NodeFreadPreOrder( fp, node->left, buff );
     }
     
-    fgets( buff, BUFF_SIZE, fp );
+    fgets( buff, BUFF_SIZE - 1, fp );
 
-    *strchr( buff, '\n' ) = '\0';
+    p = strchr( buff, '\n' );
+
+    if( p )
+        *p = '\0';
 
     if( !strcmp( buff, "nil" ) )
     {
@@ -211,14 +265,28 @@ void NodeFreadPreOrder( FILE* fp, Node* node, char* buff )
     {
         node->right = NewNode();
 
-        fgets( node->right->data, BUFF_SIZE, fp );
+        if( !node->right )
+        {
+            perror( "nullptr error" );
 
-        *strchr( node->right->data, '\n' ) = '\0';
+            return TREE_ERRS::LACK_OF_MEMORY;
+        }
+
+        fgets( buff, BUFF_SIZE - 1, fp );
+
+        p = strchr( buff, '\n' );
+
+        if( p )
+            *p = '\0';
+
+        node->right->data = strdup( buff );
 
         NodeFreadPreOrder( fp, node->right, buff );
     }
 
-    fgets( buff, BUFF_SIZE, fp );
+    fgets( buff, BUFF_SIZE - 1, fp );
+
+    return TREE_ERRS::TREE_OK;
 }
 
 void VisTreeDump( Tree* tree, const char* s1 )
@@ -252,21 +320,28 @@ void VisSubTreeDump( Node* node, int n, FILE* fp )
         return;
 
     if( node->left || node->right )
-        fprintf( fp, "node%d[ label=\"{ <data> ", n );
+        fprintf( fp, "node%d[ label=\"{ <p> %p | <data> ", n, node );
     else
-        fprintf( fp, "node%d[ color=lightgreen label=\"{ <data> ", n );
+        fprintf( fp, "node%d[ color=lightgreen label=\"{ <p> %p | <data> ", n, node );
 
-    fputs( node->data, fp );
+    if( node->data )
+    {
+        fputs( node->data, fp );
+    }
+    else
+    {
+        fputs( "NULL", fp );
+    }
 
     if( !node->left )
         fprintf( fp, " | { <l> left:NULL" );
     else
-        fprintf( fp, " | { <l> left:%p", node->left );
+        fprintf( fp, " | { <l> left" );
 
     if( !node->right )
         fprintf( fp, " | <r> right:NULL" );
     else
-        fprintf( fp, " | <r> right:%p", node->right );
+        fprintf( fp, " | <r> right" );
 
     fprintf( fp, " } } \" ]\n" );
 
@@ -279,98 +354,4 @@ void VisSubTreeDump( Node* node, int n, FILE* fp )
     VisSubTreeDump( node->left, 2 * n + 1, fp );
 
     VisSubTreeDump( node->right, 2 * n + 2, fp );
-}
-
-void StartAkinator( Tree* tree )
-{
-    if( !tree )
-    {
-        SMTH_IS_NULL( tree );
-
-        return;
-    }
-
-    if( !tree->root )
-    {
-        printf( "tree is empty\n" );
-
-        return;
-    }
-
-    AkinatorCall( tree->root );
-}
-
-void AkinatorCall( Node* node )
-{
-    printf( "(Is/Does) your object ");
-
-    puts( strcat( node->data, "?" ) );
-
-    *strchr( node->data, '?' ) = '\0';
-
-    printf( "Enter[y/n]: " );
-
-    fflush( stdin );
-
-    int ch = getchar();
-
-    while( getchar() != '\n' )
-        ;
-
-    if( ch == 'y' )
-    {
-        putc( '\n', stdout );
-
-        if( !node->right )
-        {
-            printf( "\nHAHAHAHA HUMANITY LOST AGAIN, BOZO GETTA FUK OUTA HERE\n" );
-
-            return;
-        }
-
-        AkinatorCall( node->right );
-    }
-    else
-    {
-        putc( '\n', stdout );
-
-        if( !node->left )
-        {
-            Node* newnodel = NewNode();
-
-            Node* newnoder = NewNode();    //the past node can't conform the new condition, that's why it must be left 
-
-            node->left = newnodel;
-
-            node->right = newnoder;
-
-            strncpy( node->left->data, node->data, BUFF_SIZE );
-
-            printf( "Give a hint to the stupid computer, please.\n" );
-            printf( "Who or What was your object?\n"
-                    "-(He/She/It) is " );
-            
-            fgets( node->right->data, BUFF_SIZE, stdin );
-
-            *strchr( node->right->data, '\n' ) = '\0';
-
-            printf( "What's the difference between your object and " );
-
-            fputs( strcat( node->left->data, "?" ), stdout );
-
-            *strchr( node->left->data, '?' ) = '\0';
-
-            printf( "-(He/She/It) (is/does) " );
-
-            fgets( node->data, BUFF_SIZE, stdin );
-
-            *strchr( node->data, '\n' ) = '\0';
-
-            return;
-        }
-
-        fflush( stdin );
-
-        AkinatorCall( node->left );
-    }
 }

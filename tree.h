@@ -1,8 +1,5 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-
-#include "mystring.h"
+#ifndef _TREE__
+#define _TREE__
 
 typedef char* TreeElem;
 
@@ -10,11 +7,11 @@ const long long DEAD_TREE_ELEM = ( 1ull << 63 ) - 1;
 
 const long long MAX_TREE_ELEM_LEN = 64;
 
-const size_t BUFF_SIZE = 24;
+const size_t BUFF_SIZE = 100;
 
 struct Node 
 {
-    TreeElem data;
+    TreeElem data;  //
 
     Node* left;
 
@@ -30,7 +27,24 @@ struct Tree
     size_t depth;
 };
 
+enum TREE_ERRS
+{
+    TREE_OK = 0,
+    LACK_OF_MEMORY = 1 << 0,
+    TREE_IS_EMPTY = 1 << 1,
+    FP_IS_NULL = 1 << 2,
+    TREE_POINTER_IS_NULL = 1 << 3,
+    INVALID_TREE_INPUT = 1 << 4,
+    TREE_END_OF_IN = 1 << 5
+};
+
 #define VIS_TREE_DUMP( tree ) VisTreeDump( tree, #tree );
+
+void NodeCtor( Node* node );
+
+Node* NewNode();
+
+void NodeDtor( Node* node );
 
 void TreeCtor( Tree* );
 
@@ -40,24 +54,16 @@ void TreeDtor( Tree* tree );
 
 Tree* NewTree();
 
-void NodeCtor( Node* node );
-
-Node* NewNode();
-
-Node* TreeInsert( Tree* tree, TreeElem elem );
-
 void OutTreePreOrder( Tree* tree, FILE* fp );
 
 void OutSubTreePreOrder( Node* node, FILE* fp );
 
-void FreadPreOrder( FILE* fp, Tree* tree );
+TREE_ERRS FreadPreOrder( FILE* fp, Tree* tree );
 
-void NodeFreadPreOrder( FILE* fp, Node* node, char* buff );
-
-void StartAkinator( Tree* tree );
-
-void AkinatorCall( Node* node );
+TREE_ERRS NodeFreadPreOrder( FILE* fp, Node* node, char* buff );
 
 void VisTreeDump( Tree* tree, const char* s1 );
 
 void VisSubTreeDump( Node* node, int n, FILE* fp );
+
+#endif
