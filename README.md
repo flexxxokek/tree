@@ -1,2 +1,2 @@
-# tree
-binary tree, works withlong long integers
+# akinator
+Binary tree
